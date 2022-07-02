@@ -1,4 +1,4 @@
-all: update build
+all: update install build
 
 # Update Dependencies
 update:; forge update
@@ -6,9 +6,10 @@ update:; forge update
 # Install the Modules
 install :; forge install
 
+# Build project
+build :; forge build
+
 # Tests
 test:; forge test --optimize
-test-fullv:; forge test --optimize -vvvv
+test-full:; forge test --optimize -vvvv
 test-gas:; forge test --optimize --gas-report
-
-.PHONY: test build
