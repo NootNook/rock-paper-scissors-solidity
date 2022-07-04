@@ -10,6 +10,6 @@ install :; forge install
 build :; forge build
 
 # Tests
-test:; forge test --optimize
-test-full:; forge test --optimize -vvvv
-test-gas:; forge test --optimize --gas-report
+test:; forge test
+test-full:; forge test -vvvv
+test-gas:; forge test --gas-report
