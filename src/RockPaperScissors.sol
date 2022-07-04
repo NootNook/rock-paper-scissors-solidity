@@ -2,6 +2,9 @@
 pragma solidity ^0.8.15;
 
 contract RockPaperScissors {
+
+    error InsufficientBet(uint256 amountMin);
+
     event Game(
         address player1,
         address player2,
@@ -16,6 +19,8 @@ contract RockPaperScissors {
     address public player2;
     uint256 public nbrPlayer = 0;
 
+    uint256 public intialBet;
+
     uint256 private startGame;
     uint256 private delayGame = 10 minutes;
 
@@ -23,7 +28,7 @@ contract RockPaperScissors {
     bytes32 private hashMovePlayer1;
     bytes32 private hashMovePlayer2;
 
-    bool private isLive;
+    bool public isLive;
 
     enum Move {
         None,
@@ -53,19 +58,21 @@ contract RockPaperScissors {
     }
 
     function register() external payable {
-        require(nbrPlayer < 2, "Max player, next round...");
-        require(msg.sender != player1);
-        // require(tx.origin == msg.sender, "The caller is another contract"); necessary ???
+        require(nbrPlayer < 2, "FULL_GAME");
+        require(msg.sender != player1, "INVALID_PLAYER (only another address)");
+        if(nbrPlayer == 1 && msg.value < _balances[player1])
+            revert InsufficientBet(_balances[player1]);
 
         isLive = true;
 
         unchecked {
-            nbrPlayer++; //gas saving
+            nbrPlayer++;
         }
 
         if (nbrPlayer == 1) {
             player1 = msg.sender;
             startGame = block.timestamp;
+            intialBet = msg.value;
         } else player2 = msg.sender;
 
         _balances[msg.sender] = msg.value;
@@ -210,6 +217,7 @@ contract RockPaperScissors {
         movePlayer2 = Move.None;
 
         startGame = 0;
+        intialBet = 0;
     }
 
     function getBalance() external view returns (uint256) {

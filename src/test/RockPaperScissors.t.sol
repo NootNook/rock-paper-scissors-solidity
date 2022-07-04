@@ -73,6 +73,45 @@ contract RockPaperScissorsTest is Test {
 
     }
 
+    // Test of the register function
+
+    function testThreePlayer() public {
+        vm.deal(charlie, 20 ether);
+
+        vm.prank(alice);
+        rps.register{value: 3 ether}();
+        vm.prank(bob);
+        rps.register{value: 3 ether}();
+        vm.prank(charlie);
+
+        vm.expectRevert("FULL_GAME");
+        rps.register{value: 3 ether}();
+    }
+
+    function testSamePlayer() public {
+        vm.startPrank(alice);
+        rps.register{value: 3 ether}();
+
+        vm.expectRevert("INVALID_PLAYER (only another address)");
+        rps.register{value: 3 ether}();
+        vm.stopPrank();
+    }
+
+    function testInsufficientBet() public {
+        uint256 initialBet = 3 ether;
+        vm.prank(alice);
+        rps.register{value: initialBet}();
+        vm.prank(bob);
+
+        vm.expectRevert(
+            abi.encodeWithSelector(RockPaperScissors.InsufficientBet.selector, initialBet)
+        );
+    
+        rps.register{value: 1 ether}();
+    }
+
+    // Helper functions
+
     function getHash(uint256 _move, string memory _salt) internal pure returns (bytes32) {
         return keccak256(abi.encodePacked(_move, _salt));
     }
