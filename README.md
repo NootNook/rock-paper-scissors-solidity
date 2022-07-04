@@ -5,4 +5,15 @@ Small project to train myself on web3 languages.
 
 I took some design ideas from this [repository](https://github.com/ojroques/ethereum-rockpaperscissors).
 
-Explanation...
+## Requirement
+
+- [Foundry](https://github.com/foundry-rs/foundry#installation)
+
+## Quick Start
+
+### Installation
+`make`
+
+### Run tests
+
+`make test`
