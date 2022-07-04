@@ -168,15 +168,7 @@ contract RockPaperScissorsTest is Test {
     }
 
     // Helper functions
-    /*function testContractPlayer() public {
-        PlayerContract player = new PlayerContract();
-        vm.deal(address(player), 20 ether);
 
-        bool status = player.goRegister(address(rps));
-
-        assertEq(rps.nbrPlayer(), 1);
-        assertTrue(status, "allo why");
-    }*/
     function registerTwoPlayer() internal {
         vm.prank(alice);
         rps.register{value: 3 ether}();
