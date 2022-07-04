@@ -4,6 +4,20 @@ pragma solidity ^0.8.15;
 import "forge-std/Test.sol";
 import {RockPaperScissors} from "../RockPaperScissors.sol";
 
+/*
+contract PlayerContract {
+    
+    function goRegister(address addrContract) public returns (bool) {
+
+        (bool status,) = payable(addrContract).call{value: 5 ether}(
+            abi.encodeWithSignature("register()")
+        );
+
+        return status;
+    }
+}
+*/
+
 contract RockPaperScissorsTest is Test {
 
     event Game(
@@ -110,7 +124,65 @@ contract RockPaperScissorsTest is Test {
         rps.register{value: 1 ether}();
     }
 
+    /*function testContractPlayer() public {
+        PlayerContract player = new PlayerContract();
+        vm.deal(address(player), 20 ether);
+
+        bool status = player.goRegister(address(rps));
+
+        assertEq(rps.nbrPlayer(), 1);
+        assertTrue(status, "allo why");
+    }*/
+
+    // Test of the play function
+
+    function testEmptyChoice() public {
+        registerTwoPlayer();
+        vm.prank(alice);
+
+        vm.expectRevert("ILLEGAL_MOVE");
+        rps.play(0);
+    }
+
+    function testNotFullyGame() public {
+        vm.startPrank(alice);
+        rps.register{value: 3 ether}();
+
+        vm.expectRevert("NO_FULL_GAME");
+        rps.play("hello you");
+
+        vm.stopPrank();
+    }
+
+    function testEndPlayPhase() public {
+        registerTwoPlayer();
+
+        vm.prank(alice);
+        rps.play("f61656511551561615165");
+        vm.startPrank(bob);
+        rps.play("9843169848651164991");
+
+        vm.expectRevert("END_PLAY_PHRASE");
+        rps.play("656546465ae4a65e64ea645e");
+        vm.stopPrank();
+    }
+
     // Helper functions
+    /*function testContractPlayer() public {
+        PlayerContract player = new PlayerContract();
+        vm.deal(address(player), 20 ether);
+
+        bool status = player.goRegister(address(rps));
+
+        assertEq(rps.nbrPlayer(), 1);
+        assertTrue(status, "allo why");
+    }*/
+    function registerTwoPlayer() internal {
+        vm.prank(alice);
+        rps.register{value: 3 ether}();
+        vm.prank(bob);
+        rps.register{value: 3 ether}();
+    }
 
     function getHash(uint256 _move, string memory _salt) internal pure returns (bytes32) {
         return keccak256(abi.encodePacked(_move, _salt));
