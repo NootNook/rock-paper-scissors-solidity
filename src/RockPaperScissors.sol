@@ -41,14 +41,14 @@ contract RockPaperScissors {
     Move public movePlayer2;
 
     modifier onlyOwner() {
-        require(msg.sender == owner, "You're not owner");
+        require(msg.sender == owner, "ONLY_OWNER");
         _;
     }
 
     modifier onlyPlayer() {
         require(
             msg.sender == player1 || msg.sender == player2,
-            "Game started. Only to players"
+            "ONLY_PLAYER"
         );
         _;
     }
@@ -60,6 +60,7 @@ contract RockPaperScissors {
     function register() external payable {
         require(nbrPlayer < 2, "FULL_GAME");
         require(msg.sender != player1, "INVALID_PLAYER (only another address)");
+        //require(tx.origin == msg.sender, "ILLEGAL_CALLER (you're contract)");
         if(nbrPlayer == 1 && msg.value < _balances[player1])
             revert InsufficientBet(_balances[player1]);
 
@@ -79,11 +80,11 @@ contract RockPaperScissors {
     }
 
     function play(bytes32 hashMove) external onlyPlayer {
-        require(hashMove != 0, "Not empty choice");
-        require(nbrPlayer == 2, "Wait other register for game started");
+        require(hashMove != 0, "ILLEGAL_MOVE");
+        require(nbrPlayer == 2, "NO_FULL_GAME");
         require(
             hashMovePlayer1 == 0 || hashMovePlayer2 == 0,
-            "All the moves have been entered, you can't modify"
+            "END_PLAY_PHRASE"
         );
 
         if (msg.sender == player1) hashMovePlayer1 = hashMove;
