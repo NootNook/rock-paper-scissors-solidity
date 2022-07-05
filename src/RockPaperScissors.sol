@@ -22,7 +22,7 @@ contract RockPaperScissors {
     uint256 public intialBet;
 
     uint256 private startGame;
-    uint256 private delayGame = 10 minutes;
+    uint256 private delayWithdrawEmergency = 10 minutes;
 
     mapping(address => uint256) private _balances;
     bytes32 private hashMovePlayer1;
@@ -102,6 +102,8 @@ contract RockPaperScissors {
             "WAIT_REVEAL_PHASE"
         );
 
+        delayWithdrawEmergency = 1 hours;
+
         bool isPlayer1 = msg.sender == player1; //gas saving ?
         bytes32 hashReveal = getHashMove(_move, _salt);
         bytes32 hashPlay = isPlayer1 ? hashMovePlayer1 : hashMovePlayer2;
@@ -140,19 +142,20 @@ contract RockPaperScissors {
 
         if (_winner == address(0)) {
             (success, ) = payable(_player1).call{value: amountPlayer1}("");
-            require(success, "Invalid transfer withdraw");
+            require(success, "INVALID_TRANSFER (distributionProfits)");
 
             (success, ) = payable(_player2).call{value: amountPlayer2}("");
-            require(success, "Invalid transfer withdraw");
+            require(success, "INVALID_TRANSFER (distributionProfits)");
         } else {
             (success, ) = payable(_winner).call{value: amountWinner}("");
-            require(success, "Invalid transfer withdraw");
+            require(success, "INVALID_TRANSFER (distributionProfits)");
         }
     }
 
+    // Re entrancy necessary ?
     function withdrawEmergency() external onlyPlayer {
-        require(isLive);
-        require(block.timestamp > startGame + delayGame);
+        require(isLive, "GAME_NOT_LIVE");
+        require(block.timestamp > startGame + delayWithdrawEmergency, "WAIT_DELAYTIME");
         uint256 amount = _balances[msg.sender];
         _balances[msg.sender] = 0;
 
@@ -162,7 +165,7 @@ contract RockPaperScissors {
         resetGame();
 
         (success, ) = payable(msg.sender).call{value: amount}("");
-        require(success, "Invalid transfer withdraw");
+        require(success, "INVALID_TRANSFER (withdrawEmergency)");
 
         if (otherPlayer == address(0)) return;
 
@@ -170,15 +173,15 @@ contract RockPaperScissors {
         _balances[otherPlayer] = 0;
 
         (success, ) = payable(otherPlayer).call{value: amount}("");
-        require(success, "Invalid transfer withdraw");
+        require(success, "INVALID_TRANSFER (withdrawEmergency)");
     }
 
     function withdrawOwner(uint256 _amount) external onlyOwner {
-        require(!isLive);
+        require(!isLive, "GAME_LIVE");
 
         (bool success, ) = payable(owner).call{value: _amount}("");
 
-        require(success, "Invalid transfer withdraw");
+        require(success, "INVALID_TRANSFER (withdrawOwner)");
     }
 
     // Internal functions
@@ -211,6 +214,8 @@ contract RockPaperScissors {
         player1 = address(0);
         player2 = address(0);
 
+        nbrPlayer = 0;
+
         hashMovePlayer1 = 0;
         hashMovePlayer2 = 0;
 
@@ -219,6 +224,8 @@ contract RockPaperScissors {
 
         startGame = 0;
         intialBet = 0;
+
+        isLive = false;
     }
 
     function getBalance() external view returns (uint256) {
