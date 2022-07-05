@@ -112,15 +112,17 @@ contract RockPaperScissors {
         if (isPlayer1) movePlayer1 = Move(_move);
         else movePlayer2 = Move(_move);
 
-        if (movePlayer1 != Move.None && movePlayer2 != Move.None) {
-            address winner = revealWinner();
-            address _player1 = player1;
-            address _player2 = player2;
-            emit Game(player1, player2, movePlayer1, movePlayer2, winner);
-            resetGame();
-            distributionProfits(_player1, _player2, winner);
-            isLive = false;
-        }
+        if (movePlayer1 == Move.None || movePlayer2 == Move.None)
+            return;
+
+        address winner = revealWinner();
+        address _player1 = player1;
+        address _player2 = player2;
+        emit Game(player1, player2, movePlayer1, movePlayer2, winner);
+        resetGame();
+        distributionProfits(_player1, _player2, winner);
+        isLive = false;
+
     }
 
     function distributionProfits(
@@ -226,9 +228,5 @@ contract RockPaperScissors {
         intialBet = 0;
 
         isLive = false;
-    }
-
-    function getBalance() external view returns (uint256) {
-        return address(this).balance;
     }
 }
