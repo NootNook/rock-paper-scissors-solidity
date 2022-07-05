@@ -13,3 +13,5 @@ build :; forge build
 test:; forge test
 test-full:; forge test -vvvv
 test-gas:; forge test --gas-report
+
+lint:; yarn prettier --write src/**/*.sol && yarn prettier --write src/*.sol 
