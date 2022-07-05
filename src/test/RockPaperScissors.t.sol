@@ -2,6 +2,7 @@
 pragma solidity ^0.8.15;
 
 import "forge-std/Test.sol";
+import "forge-std/console2.sol";
 import {RockPaperScissors} from "../RockPaperScissors.sol";
 
 /*
@@ -28,6 +29,9 @@ contract RockPaperScissorsTest is Test {
         address winner
     );
 
+    uint256 intialBalance = 20 ether;
+
+    address internal immutable owner = address(0);
     address internal immutable alice = address(1);
     address internal immutable bob = address(2);
     address internal immutable charlie = address(3);
@@ -51,9 +55,10 @@ contract RockPaperScissorsTest is Test {
     string internal saltBob;
 
     function setUp() public {
+        vm.prank(owner);
         rps = new RockPaperScissors();
-        vm.deal(alice, 20 ether);
-        vm.deal(bob, 20 ether);
+        vm.deal(alice, intialBalance);
+        vm.deal(bob, intialBalance);
     }
 
     function testNormalGame() public {
@@ -85,12 +90,61 @@ contract RockPaperScissorsTest is Test {
         emit Game(alice, bob, Move(moveAlice), Move(moveBob), alice);
         rps.revealMove(moveBob, saltBob);
 
+        assertEq(alice.balance, intialBalance + 3 ether);
+        assertEq(bob.balance, intialBalance - 3 ether);
+
+        assertEq(rps.isLive(), false);
+        assertEq(rps.nbrPlayer(), 0);
+        assertEq(rps.player1(), address(0));
+        assertEq(rps.player2(), address(0));
+        assertEq(uint(rps.movePlayer1()), 0);
+        assertEq(uint(rps.movePlayer2()), 0);
+    }
+
+    function testTiedGame() public {
+        vm.prank(alice);
+        rps.register{value: 3 ether}();
+        vm.prank(bob);
+        rps.register{value: 3 ether}();
+
+        moveAlice = uint256(Move.Scissor);
+        moveBob = uint256(Move.Scissor);
+
+        saltAlice = "zdqzdqdoqhj5gy3j5gj";
+        saltBob = "654qzdqd65qzdqzd6qz5d1";
+
+        hashAlice = getHash(moveAlice, saltAlice);
+        hashBob = getHash(moveBob, saltBob);
+
+        vm.prank(alice);
+        rps.play(hashAlice);
+        vm.prank(bob);
+        rps.play(hashBob);
+
+        vm.prank(alice);
+        rps.revealMove(moveAlice, saltAlice);
+
+        vm.prank(bob);
+
+        vm.expectEmit(true, true, true, true);
+        emit Game(alice, bob, Move(moveAlice), Move(moveBob), address(0));
+        rps.revealMove(moveBob, saltBob);
+
+        assertEq(alice.balance, intialBalance);
+        assertEq(bob.balance, intialBalance);
+
+        assertEq(rps.isLive(), false);
+        assertEq(rps.nbrPlayer(), 0);
+        assertEq(rps.player1(), address(0));
+        assertEq(rps.player2(), address(0));
+        assertEq(uint(rps.movePlayer1()), 0);
+        assertEq(uint(rps.movePlayer2()), 0);
     }
 
     // Test of the register function
 
     function testThreePlayer() public {
-        vm.deal(charlie, 20 ether);
+        vm.deal(charlie, intialBalance);
 
         vm.prank(alice);
         rps.register{value: 3 ether}();
@@ -126,7 +180,7 @@ contract RockPaperScissorsTest is Test {
 
     /*function testContractPlayer() public {
         PlayerContract player = new PlayerContract();
-        vm.deal(address(player), 20 ether);
+        vm.deal(address(player), intialBalance);
 
         bool status = player.goRegister(address(rps));
 
@@ -194,6 +248,61 @@ contract RockPaperScissorsTest is Test {
         vm.expectRevert("WAIT_REVEAL_PHASE");
         rps.revealMove(2, "dqzdd");
         vm.stopPrank();
+    }
+
+    // Test fo withdraw function
+
+    function testWithdrawOwnerGameLive() public {
+        vm.deal(address(rps), intialBalance);
+        registerTwoPlayer();
+
+        vm.expectRevert("GAME_LIVE");
+        vm.prank(address(0));
+        rps.withdrawOwner(10 ether);
+    }
+
+    function testWithdrawOwnerNotOwner() public {
+        vm.deal(address(rps), intialBalance);
+
+        vm.expectRevert("ONLY_OWNER");
+        vm.prank(alice);
+        rps.withdrawOwner(10 ether);
+    }
+
+    function testWIthdrawOwnerSucess() public {
+        vm.deal(address(rps), intialBalance);
+        vm.prank(address(0));
+        rps.withdrawOwner(10 ether);
+    }
+
+    function testWIthdrawOwnerAvid() public {
+        vm.deal(address(rps), intialBalance);
+        vm.prank(address(0));
+        vm.expectRevert("INVALID_TRANSFER (withdrawOwner)");
+        rps.withdrawOwner(30 ether);
+    }
+
+    // Test fo withdraw function
+
+    function testwithdrawEmergencySuccess() public {
+        registerTwoPlayer();
+
+        vm.startPrank(alice);
+        rps.play("65654645ae4a65e64ea645e");
+
+        vm.warp(block.timestamp + 20 minutes);
+        rps.withdrawEmergency();
+
+        assertEq(alice.balance, intialBalance);
+        assertEq(bob.balance, intialBalance);
+
+        vm.stopPrank();
+    }
+
+    function withdrawEmergencyLive() public {
+        vm.expectRevert("GAME_NOT_LIVE");
+        vm.prank(alice);
+        rps.withdrawEmergency();
     }
 
     // Helper functions
