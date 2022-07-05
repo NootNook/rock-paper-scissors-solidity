@@ -96,16 +96,16 @@ contract RockPaperScissors {
         onlyPlayer
     {
         // Test with the lower and upper operation-> gas saving ?
-        require(_move == 1 || _move == 2 || _move == 3, "Invalid move");
+        require(_move == 1 || _move == 2 || _move == 3, "ILLEGAL_REVEAL_MOVE");
         require(
             hashMovePlayer1 != 0 && hashMovePlayer2 != 0,
-            "Missing the player move"
+            "WAIT_REVEAL_PHASE"
         );
 
         bool isPlayer1 = msg.sender == player1; //gas saving ?
         bytes32 hashReveal = getHashMove(_move, _salt);
         bytes32 hashPlay = isPlayer1 ? hashMovePlayer1 : hashMovePlayer2;
-        require(hashReveal == hashPlay, "Invalid reveal !");
+        require(hashReveal == hashPlay, "INVALID_REVEAL");
 
         if (isPlayer1) movePlayer1 = Move(_move);
         else movePlayer2 = Move(_move);
