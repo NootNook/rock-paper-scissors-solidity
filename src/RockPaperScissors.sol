@@ -2,7 +2,6 @@
 pragma solidity ^0.8.15;
 
 contract RockPaperScissors {
-
     error InsufficientBet(uint256 amountMin);
 
     event Game(
@@ -41,15 +40,12 @@ contract RockPaperScissors {
     Move public movePlayer2;
 
     modifier onlyOwner() {
-        require(msg.sender == owner, "ONLY_OWNER");
+        require(msg.sender == owner, 'ONLY_OWNER');
         _;
     }
 
     modifier onlyPlayer() {
-        require(
-            msg.sender == player1 || msg.sender == player2,
-            "ONLY_PLAYER"
-        );
+        require(msg.sender == player1 || msg.sender == player2, 'ONLY_PLAYER');
         _;
     }
 
@@ -58,10 +54,10 @@ contract RockPaperScissors {
     }
 
     function register() external payable {
-        require(nbrPlayer < 2, "FULL_GAME");
-        require(msg.sender != player1, "INVALID_PLAYER (only another address)");
+        require(nbrPlayer < 2, 'FULL_GAME');
+        require(msg.sender != player1, 'INVALID_PLAYER (only another address)');
         //require(tx.origin == msg.sender, "ILLEGAL_CALLER (you're contract)");
-        if(nbrPlayer == 1 && msg.value < _balances[player1])
+        if (nbrPlayer == 1 && msg.value < _balances[player1])
             revert InsufficientBet(_balances[player1]);
 
         isLive = true;
@@ -80,40 +76,30 @@ contract RockPaperScissors {
     }
 
     function play(bytes32 hashMove) external onlyPlayer {
-        require(hashMove != 0, "ILLEGAL_MOVE");
-        require(nbrPlayer == 2, "NO_FULL_GAME");
-        require(
-            hashMovePlayer1 == 0 || hashMovePlayer2 == 0,
-            "END_PLAY_PHRASE"
-        );
+        require(hashMove != 0, 'ILLEGAL_MOVE');
+        require(nbrPlayer == 2, 'NO_FULL_GAME');
+        require(hashMovePlayer1 == 0 || hashMovePlayer2 == 0, 'END_PLAY_PHRASE');
 
         if (msg.sender == player1) hashMovePlayer1 = hashMove;
         else hashMovePlayer2 = hashMove;
     }
 
-    function revealMove(uint256 _move, string calldata _salt)
-        external
-        onlyPlayer
-    {
+    function revealMove(uint256 _move, string calldata _salt) external onlyPlayer {
         // Test with the lower and upper operation-> gas saving ?
-        require(_move == 1 || _move == 2 || _move == 3, "ILLEGAL_REVEAL_MOVE");
-        require(
-            hashMovePlayer1 != 0 && hashMovePlayer2 != 0,
-            "WAIT_REVEAL_PHASE"
-        );
+        require(_move == 1 || _move == 2 || _move == 3, 'ILLEGAL_REVEAL_MOVE');
+        require(hashMovePlayer1 != 0 && hashMovePlayer2 != 0, 'WAIT_REVEAL_PHASE');
 
         delayWithdrawEmergency = 1 hours;
 
         bool isPlayer1 = msg.sender == player1; //gas saving ?
         bytes32 hashReveal = getHashMove(_move, _salt);
         bytes32 hashPlay = isPlayer1 ? hashMovePlayer1 : hashMovePlayer2;
-        require(hashReveal == hashPlay, "INVALID_REVEAL");
+        require(hashReveal == hashPlay, 'INVALID_REVEAL');
 
         if (isPlayer1) movePlayer1 = Move(_move);
         else movePlayer2 = Move(_move);
 
-        if (movePlayer1 == Move.None || movePlayer2 == Move.None)
-            return;
+        if (movePlayer1 == Move.None || movePlayer2 == Move.None) return;
 
         address winner = revealWinner();
         address _player1 = player1;
@@ -122,7 +108,6 @@ contract RockPaperScissors {
         resetGame();
         distributionProfits(_player1, _player2, winner);
         isLive = false;
-
     }
 
     function distributionProfits(
@@ -143,21 +128,21 @@ contract RockPaperScissors {
         bool success;
 
         if (_winner == address(0)) {
-            (success, ) = payable(_player1).call{value: amountPlayer1}("");
-            require(success, "INVALID_TRANSFER (distributionProfits)");
+            (success, ) = payable(_player1).call{value: amountPlayer1}('');
+            require(success, 'INVALID_TRANSFER (distributionProfits)');
 
-            (success, ) = payable(_player2).call{value: amountPlayer2}("");
-            require(success, "INVALID_TRANSFER (distributionProfits)");
+            (success, ) = payable(_player2).call{value: amountPlayer2}('');
+            require(success, 'INVALID_TRANSFER (distributionProfits)');
         } else {
-            (success, ) = payable(_winner).call{value: amountWinner}("");
-            require(success, "INVALID_TRANSFER (distributionProfits)");
+            (success, ) = payable(_winner).call{value: amountWinner}('');
+            require(success, 'INVALID_TRANSFER (distributionProfits)');
         }
     }
 
     // Re entrancy necessary ?
     function withdrawEmergency() external onlyPlayer {
-        require(isLive, "GAME_NOT_LIVE");
-        require(block.timestamp > startGame + delayWithdrawEmergency, "WAIT_DELAYTIME");
+        require(isLive, 'GAME_NOT_LIVE');
+        require(block.timestamp > startGame + delayWithdrawEmergency, 'WAIT_DELAYTIME');
         uint256 amount = _balances[msg.sender];
         _balances[msg.sender] = 0;
 
@@ -166,33 +151,29 @@ contract RockPaperScissors {
 
         resetGame();
 
-        (success, ) = payable(msg.sender).call{value: amount}("");
-        require(success, "INVALID_TRANSFER (withdrawEmergency)");
+        (success, ) = payable(msg.sender).call{value: amount}('');
+        require(success, 'INVALID_TRANSFER (withdrawEmergency)');
 
         if (otherPlayer == address(0)) return;
 
         amount = _balances[otherPlayer];
         _balances[otherPlayer] = 0;
 
-        (success, ) = payable(otherPlayer).call{value: amount}("");
-        require(success, "INVALID_TRANSFER (withdrawEmergency)");
+        (success, ) = payable(otherPlayer).call{value: amount}('');
+        require(success, 'INVALID_TRANSFER (withdrawEmergency)');
     }
 
     function withdrawOwner(uint256 _amount) external onlyOwner {
-        require(!isLive, "GAME_LIVE");
+        require(!isLive, 'GAME_LIVE');
 
-        (bool success, ) = payable(owner).call{value: _amount}("");
+        (bool success, ) = payable(owner).call{value: _amount}('');
 
-        require(success, "INVALID_TRANSFER (withdrawOwner)");
+        require(success, 'INVALID_TRANSFER (withdrawOwner)');
     }
 
     // Internal functions
 
-    function getHashMove(uint256 _move, string calldata _salt)
-        internal
-        pure
-        returns (bytes32)
-    {
+    function getHashMove(uint256 _move, string calldata _salt) internal pure returns (bytes32) {
         return keccak256(abi.encodePacked(_move, _salt));
     }
 
