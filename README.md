@@ -8,6 +8,7 @@ I took some design ideas from this [repository](https://github.com/ojroques/ethe
 ## ⚙️ Requirement
 
 - [Foundry](https://github.com/foundry-rs/foundry#installation)
+- [Yarn](https://github.com/yarnpkg/yarn)
 
 ## 🚀 Quick Start
 
@@ -17,3 +18,7 @@ I took some design ideas from this [repository](https://github.com/ojroques/ethe
 ### Run tests
 
 `make test`
+
+## Lints
+
+`make lint`
