@@ -167,6 +167,35 @@ contract RockPaperScissorsTest is Test {
         vm.stopPrank();
     }
 
+    // Test of the revealMove function 
+
+    function testIllegalMove() public {
+        registerTwoPlayer();
+
+        vm.prank(alice);
+        vm.expectRevert("ILLEGAL_REVEAL_MOVE");
+        rps.revealMove(5, "qzdqzdqzzq");
+    }
+
+    function testInvalidReveal() public {
+        registerTwoPlayer();
+        playTwoPlayer();
+
+        vm.prank(alice);
+        vm.expectRevert("INVALID_REVEAL");
+        rps.revealMove(uint256(Move.Scissor), "hello");
+    }
+
+    function testWaitPlayPhase() public {
+        registerTwoPlayer();
+        vm.startPrank(alice);
+        rps.play("65654645ae4a65e64ea645e");
+        
+        vm.expectRevert("WAIT_REVEAL_PHASE");
+        rps.revealMove(2, "dqzdd");
+        vm.stopPrank();
+    }
+
     // Helper functions
 
     function registerTwoPlayer() internal {
@@ -174,6 +203,22 @@ contract RockPaperScissorsTest is Test {
         rps.register{value: 3 ether}();
         vm.prank(bob);
         rps.register{value: 3 ether}();
+    }
+
+    function playTwoPlayer() internal {
+        moveAlice = uint256(Move.Scissor);
+        moveBob = uint256(Move.Paper);
+
+        saltAlice = "zdqzdqdoqhj5gy3j5gj";
+        saltBob = "654qzdqd65qzdqzd6qz5d1";
+
+        hashAlice = getHash(moveAlice, saltAlice);
+        hashBob = getHash(moveBob, saltBob);
+
+        vm.prank(alice);
+        rps.play(hashAlice);
+        vm.prank(bob);
+        rps.play(hashBob);
     }
 
     function getHash(uint256 _move, string memory _salt) internal pure returns (bytes32) {
