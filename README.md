@@ -19,6 +19,6 @@ I took some design ideas from this [repository](https://github.com/ojroques/ethe
 
 `make test`
 
-## Lints
+### Code formatter
 
 `make lint`
